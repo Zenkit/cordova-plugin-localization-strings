@@ -196,54 +196,15 @@ module.exports = function (context) {
 			});
 		});
 
-		var pbxProjPath = getXcodePbxProjPath();
-		var proj = xcode.project(pbxProjPath);
+ 		var platformRoot = path.join(context.opts.projectRoot, "platforms", "ios");
+		var projectFileApi = require(path.join(platformRoot, "/cordova/lib/projectFile.js"));
+		var project = projectFileApi.parse({ root: platformRoot, pbxproj: getXcodePbxProjPath() })
 
-		return new Promise(function (resolve, reject) {
-			proj.parse(function (error) {
-				if (error) {
-					reject(error);
-				}
-
-				writeLocalisationFieldsToXcodeProj(
-					infoPlistPaths,
-					"InfoPlist.strings",
-					proj
-				);
-				writeLocalisationFieldsToXcodeProj(
-					localizableStringsPaths,
-					"Localizable.strings",
-					proj
-				);
-				writeLocalisationFieldsToXcodeProj(
-					appShortcutsPaths,
-					"AppShortcuts.strings",
-					proj
-				);
-
-				fs.writeFileSync(pbxProjPath, proj.writeSync());
-				console.log(
-					"Pbx project written with localization groups",
-					_.map(languages, "lang")
-				);
-
-				var platformPath = path.join(
-					context.opts.projectRoot,
-					"platforms",
-					"ios"
-				);
-				var projectFilePath = path.join(
-					platformPath,
-					"/cordova/lib/projectFile.js"
-				);
-				var projectFileExists = fs.existsSync(projectFilePath);
-
-				// Starting cordova-ios@7.0.0, projectFile.js is not part of the platform folder anymore and has to be grabbed from node_modules
-				var projectFileApi = projectFileExists ? require(projectFilePath) : require("cordova-ios/lib/projectFile");
-				projectFileApi.purgeProjectFileCache(platformPath);
-
-				resolve();
-			});
-		});
+		writeLocalisationFieldsToXcodeProj(infoPlistPaths, 'InfoPlist.strings', project.xcode);
+		writeLocalisationFieldsToXcodeProj(appShortcutsPaths, 'AppShortcuts.strings', project.xcode);
+		writeLocalisationFieldsToXcodeProj(localizableStringsPaths, 'Localizable.strings', project.xcode);
+		
+		project.write();
+		console.log('pbx project written with localization groups', _.map(languages, "lang"));
 	});
 };
