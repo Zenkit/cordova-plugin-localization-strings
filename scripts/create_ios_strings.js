@@ -1,7 +1,7 @@
 var fs = require('fs-extra');
 var _ = require('lodash');
 var iconv = require('iconv-lite');
-var xmldom = require('xmldom');    
+var xmldom = require('xmldom');
 var path = require('path');
 
 
@@ -83,8 +83,6 @@ function writeLocalisationFieldsToXcodeProj(filePaths, groupname, proj) {
     }
 }
 module.exports = function(context) {
-    var xcode = require('xcode');
-
     var localizableStringsPaths = [];
     var infoPlistPaths = [];
 
@@ -138,28 +136,18 @@ module.exports = function(context) {
 
             });
 
-            var proj = xcode.project(getXcodePbxProjPath());
+            var platformRoot = path.join(context.opts.projectRoot, "platforms", "ios");
+            var projectFileApi = require(path.join(platformRoot, "/cordova/lib/projectFile.js"));
+            var project = projectFileApi.parse({
+                root: platformRoot,
+                pbxproj: getXcodePbxProjPath(),
+            })
 
-            return new Promise(function (resolve, reject) {
-              proj.parse(function (error) {
-                  if (error) {
-                    reject(error);
-                  }
+            writeLocalisationFieldsToXcodeProj(localizableStringsPaths, 'Localizable.strings', project.xcode);
+            writeLocalisationFieldsToXcodeProj(infoPlistPaths, 'InfoPlist.strings', project.xcode);
 
-                  writeLocalisationFieldsToXcodeProj(localizableStringsPaths, 'Localizable.strings', proj);
-                  writeLocalisationFieldsToXcodeProj(infoPlistPaths, 'InfoPlist.strings', proj);
-
-                  fs.writeFileSync(getXcodePbxProjPath(), proj.writeSync());
-                  console.log('new pbx project written with localization groups');
-                  
-                  var platformPath   = path.join( context.opts.projectRoot, "platforms", "ios" );
-                  var projectFileApi = require( path.join( platformPath, "/cordova/lib/projectFile.js" ) );
-                  projectFileApi.purgeProjectFileCache( platformPath );
-                  console.log(platformPath + ' purged from project cache');
-                  
-                  resolve();
-              });
-            });
+            project.write();
+            console.log('new pbx project written with localization groups');
         });
 };
 
