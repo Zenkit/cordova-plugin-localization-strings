@@ -1,0 +1,9 @@
+printWidth: 150
+semi: true
+useTabs: false
+singleQuote: true
+jsxSingleQuote: true
+trailingComma: all
+bracketSpacing: false
+arrowParens: 'avoid'
+bracketSameLine: true

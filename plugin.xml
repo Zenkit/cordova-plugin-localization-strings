@@ -12,9 +12,9 @@
   <preference name="TRANSLATION_PATH" default="translations/app/" />
 
   <platform name="android">
-    <hook type="after_prepare" src="scripts/create_android_strings.js" />
+    <hook type="after_prepare" src="hooks/android.js" />
   </platform>
   <platform name="ios">
-    <hook type="after_prepare" src="scripts/create_ios_strings.js" />
+    <hook type="after_prepare" src="hooks/ios.js" />
   </platform>
 </plugin>
