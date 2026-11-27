@@ -147,9 +147,10 @@ function writeLocalisationFieldsToXcodeProj(filePaths, groupName, proj) {
 				// resource path used by cordova-ios 7.x and earlier
 				var resourcePath = "Resources/" + filePath;
 
-				// resource path used by cordova-ios 8.x and later
+				// cordova-ios 8.x and later: the variant group is inside the resources group (App/Resources),
+				// so the path is relative to it
 				if (fs.existsSync(path.join("platforms", "ios", "App.xcodeproj"))) {
-					resourcePath = "App/Resources/" + filePath;
+					resourcePath = filePath;
 				}
 				proj.addResourceFile(
 					resourcePath,
