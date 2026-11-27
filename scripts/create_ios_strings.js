@@ -78,6 +78,27 @@ function writeStringFile(plistStringJsonObj, lang, fileName, bundle) {
 	});
 }
 
+// The cache has to be purged in the cordova-ios instance cordova uses for the platform.
+// With another instance (e.g. a second copy of cordova-ios in the project) the platform
+// writes its cached project later and the localization groups are gone.
+function requireProjectFile(context, platformPath) {
+	var projectFilePath = path.join(platformPath, "cordova", "lib", "projectFile.js");
+	// Before cordova-ios 7 projectFile.js was part of the platform folder
+	if (fs.existsSync(projectFilePath)) {
+		return require(projectFilePath);
+	}
+
+	var platforms = context.requireCordovaModule("cordova-lib").cordova_platforms;
+	var api = platforms.getPlatformApi("ios", platformPath);
+	var apiModule = _.find(_.values(require.cache), function (module) {
+		return module.exports === api.constructor;
+	});
+	if (!apiModule) {
+		throw new Error("Couldn't find the cordova-ios module of the platform");
+	}
+	return require(path.join(path.dirname(apiModule.filename), "projectFile"));
+}
+
 // Like addLocalizationVariantGroup of xcode, but it also finds the resources group by path,
 // since cordova-ios 8 the group has no name.
 function addLocalizationVariantGroup(proj, name) {
@@ -272,14 +293,7 @@ module.exports = function (context) {
 					"platforms",
 					"ios"
 				);
-				var projectFilePath = path.join(
-					platformPath,
-					"/cordova/lib/projectFile.js"
-				);
-				var projectFileExists = fs.existsSync(projectFilePath);
-
-				// Starting cordova-ios@7.0.0, projectFile.js is not part of the platform folder anymore and has to be grabbed from node_modules
-				var projectFileApi = projectFileExists ? require(projectFilePath) : require("cordova-ios/lib/projectFile");
+				var projectFileApi = requireProjectFile(context, platformPath);
 				projectFileApi.purgeProjectFileCache(platformPath);
 
 				resolve();
