@@ -78,6 +78,29 @@ function writeStringFile(plistStringJsonObj, lang, fileName, bundle) {
 	});
 }
 
+// Like addLocalizationVariantGroup of xcode, but it also finds the resources group by path,
+// since cordova-ios 8 the group has no name.
+function addLocalizationVariantGroup(proj, name) {
+	var groupKey = proj.pbxCreateVariantGroup(name);
+	var resourcesGroupKey =
+		proj.findPBXGroupKey({ name: "Resources" }) ||
+		proj.findPBXGroupKey({ path: "Resources" });
+	if (!resourcesGroupKey) {
+		throw new Error("Couldn't find the resources group of the xcode project");
+	}
+	proj.addToPbxGroup(groupKey, resourcesGroupKey);
+
+	var file = {
+		uuid: proj.generateUuid(),
+		fileRef: groupKey,
+		basename: name,
+		group: "Resources",
+	};
+	proj.addToPbxBuildFileSection(file);
+	proj.addToPbxResourcesBuildPhase(file);
+	return groupKey;
+}
+
 function writeLocalisationFieldsToXcodeProj(filePaths, groupName, proj) {
 	var fileRefSection = proj.pbxFileReferenceSection();
 	var fileRefValues = _.values(fileRefSection);
@@ -86,9 +109,7 @@ function writeLocalisationFieldsToXcodeProj(filePaths, groupName, proj) {
 		var groupKey = proj.findPBXVariantGroupKey({ name: groupName });
 		if (!groupKey) {
 			// findPBXVariantGroupKey with name InfoPlist.strings not found. creating new group
-			var localizableStringVarGroup =
-				proj.addLocalizationVariantGroup(groupName);
-			groupKey = localizableStringVarGroup.fileRef;
+			groupKey = addLocalizationVariantGroup(proj, groupName);
 		}
 
 		filePaths.forEach(function (filePath) {
